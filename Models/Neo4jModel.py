@@ -1,3 +1,5 @@
+import re
+
 from neo4j import GraphDatabase
 
 graph = GraphDatabase.driver('bolt:localhost:7687/people', auth=('neo4j', 'password'))
@@ -5,48 +7,52 @@ graph = GraphDatabase.driver('bolt:localhost:7687/people', auth=('neo4j', 'passw
 
 def create(employee):
     with graph.session() as session:
-        return session.run("CREATE (a:Employee {" +
+        return session.run("CREATE (a:Person {" +
                            "firstName: '" + employee["firstName"] +
                            "', lastName: '" + employee["lastName"] +
                            "', hireYear: '" + employee["hireYear"] +
-                           "', id_: '" + employee["_id"] + "'}) RETURN a").single()[0]
+                           "', id: '" + employee["_id"] + "'}) RETURN a").single()[0]
 
 
 def delete(employeeId):
     with graph.session() as session:
-        session.run("MATCH (a:Employee) WHERE a.id_ = '" + employeeId + "' DELETE a")
+        session.run("MATCH (a:Person) WHERE a.id_ = '" + employeeId + "' DELETE a")
 
 
 def update(employee):
     with graph.session() as session:
-        return session.run("MATCH (a:Employee) WHERE a.id = '" + employee["id_"] + "' SET a = {" +
+        return session.run("MATCH (a:Person) WHERE a.id = '" + employee["id_"] + "' SET a = {" +
                            "firstName: '" + employee["firstName"] +
                            "', lastName: '" + employee["lastName"] +
                            "', hireYear: '" + employee["hireYear"] +
-                           "', id_: '" + employee["_id"] + "'} RETURN a").single()[0]
+                           "', id: '" + employee["_id"] + "'} RETURN a").single()
 
 
 def find(employee):
     firstName = "a.firstName = '" + employee["firstName"] + "'" if "firstName" in employee else ""
     lastName = "a.lastName = '" + employee["lastName"] + "'" if "lastName" in employee else ""
     hireYear = "a.hireYear = '" + employee["hireYear"] + "'" if "hireYear" in employee else ""
-    id_ = "a.id_ = '" + employee["_id"] + "'" if "_id" in employee else ""
+    id_ = "a.id = '" + employee["_id"] + "'" if "_id" in employee else ""
+    query = ("MATCH (a:Person) WHERE " + firstName + (" AND " if firstName != "" else "") + lastName + (" AND " if lastName != "" else "") + hireYear + (" AND " if hireYear != "" else "") + id_ + " RETURN a")
+    print(query)
     with graph.session() as session:
-        return session.run("MATCH (a:Employee) WHERE " + firstName + " AND " if firstName else "" + lastName + " AND " if lastName else "" + hireYear + " AND " if hireYear else "" + id_ + " RETURN a").single()[0]
+        results = session.run(query).single()[0]
+        props = re.match(r".*properties=(\{.*}).*", str(results))
+
+        return props.group(1).split(",") if props else []
 
 
 def findField(field, exists):
-    finding = "NOT" if exists else ""
+    finding = "" if exists else "NOT"
     with graph.session() as session:
-        return session.run(f"match (a:Employee) where (a.{field}) is {finding} null return a").single()
+        return session.run("MATCH (a:Person) WHERE " + finding + " exists(a." + field + ") RETURN a").single()[0]
 
 
 def countDocumentsWithValue(employee):
     with graph.session() as session:
-        return session.run("MATCH (a:Employee) WHERE a." + employee[0] + " = '" + employee[1] + "' RETURN a").single()[
-            0]
+        return session.run("MATCH (a:Person) WHERE a." + employee[0] + " = '" + employee[1] + "' RETURN a").single()[0]
 
 
 def getEmployeesHiredYear():
     with graph.session() as session:
-        return session.run("MATCH (a:Employee) RETURN a.hireYear AS hireYear, count(a) AS count").single()[0]
+        return session.run("MATCH (a:Person) RETURN a.hireYear AS hireYear, count(a) AS count").single()[0]
