@@ -32,23 +32,20 @@ def find(employee):
     hireYear = "a.hireYear = '" + employee["hireYear"] + "'" if "hireYear" in employee else ""
     id_ = "a.id_ = '" + employee["_id"] + "'" if "_id" in employee else ""
     with graph.session() as session:
-        return session.run("MATCH (a:Employee) WHERE " +
-                           firstName + " AND " if firstName else "" +
-                           lastName + " AND " if lastName else "" +
-                           hireYear + " AND " if hireYear else "" +
-                           id_ + " RETURN a").single()[0]
-
+        return session.run("MATCH (a:Employee) WHERE " + firstName + " AND " if firstName else "" + lastName + " AND " if lastName else "" + hireYear + " AND " if hireYear else "" + id_ + " RETURN a").single()[0]
 
 
 def findField(field, exists):
-    finding = "" if exists else "NOT"
+    finding = "NOT" if exists else ""
     with graph.session() as session:
-        return session.run("MATCH (a:Employee) WHERE " + finding + " exists(a." + field + ") RETURN a").single()[0]
+        return session.run(f"match (a:Employee) where (a.{field}) is {finding} null return a").single()
 
 
 def countDocumentsWithValue(employee):
     with graph.session() as session:
-        return session.run("MATCH (a:Employee) WHERE a." + employee[0] + " = '" + employee[1] + "' RETURN a").single()[0]
+        return session.run("MATCH (a:Employee) WHERE a." + employee[0] + " = '" + employee[1] + "' RETURN a").single()[
+            0]
+
 
 def getEmployeesHiredYear():
     with graph.session() as session:
