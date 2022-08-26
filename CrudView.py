@@ -34,7 +34,8 @@ def getAllEmployeeValues():
 	return {
 		"firstName": input("What is the employee's first name? "),
 		"lastName": input("What is the employee's last name? "),
-		"hireYear": input("What is the employee's hire year? ")
+		"hireYear": input("What is the employee's hire year? "),
+		"_id": input("What is the employee's id? ")
 	}
 
 
