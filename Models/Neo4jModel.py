@@ -43,9 +43,9 @@ def find(employee):
 
 
 def findField(field, exists):
-    finding = "" if exists else "NOT"
+    finding = "NOT" if exists else ""
     with graph.session() as session:
-        return session.run("MATCH (a:Person) WHERE " + finding + " exists(a." + field + ") RETURN a").single()[0]
+        return session.run(f"MATCH (a:Person) WHERE a.{field} IS {finding} NULL RETURN a").single()
 
 
 def countDocumentsWithValue(employee):
